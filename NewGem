@@ -1,0 +1,91 @@
+class UserService{
+    var username;// публичные поля, var приведет к ошибке  
+    var password;//публичное поле используется для шаблонирования
+    constructor(username,password){
+        this.username = username;
+        this.password = password;
+    }
+
+    get username(){// без сетера не имеет смысла
+        return UserService.username;
+    }
+    
+    get password(){ //password можно сделать приватным, получит значение password, throw не отработает
+        throw "You are not allowed to get password";
+    }
+    //статическое поле относится к классу, а не к экземпляру
+    static authentificate_user(){
+        let xhr = new XMLHttpRequest();
+        //публичные поля выдадут undefined
+        xhr.open('GET', 'https://examples.com/api/user/authentificate?username=' +
+        UserService.username + '&password=' + UserService.password, true);
+        
+        xhr.responseType = 'json';
+//отсутствует запрос
+        const result = false;
+
+        xhr.onload = function(){
+            if(xhr.status !== '200'){
+                //если ошибка получаем результат, здесь должна быть обработка ошибки
+                result = xhr.response;
+            }else{
+                result = true;
+            }
+
+        };
+        return result;
+
+    }
+}
+
+//jquery
+$('form #login').click(function(){
+    //let
+    var username = $('#username');//получаем dom елемент, а не значение
+    var password = $('#password');
+    //неправильный запрос
+    var res = UserService(username, password).authentificate_user();
+//запрос асинхронный и обработать надо асинхронно
+    if(res == true){
+        document.location.href = '/home';
+    }else {
+        alert(res.error);
+    }
+})
+
+///Я считаю что можно изменить код так
+
+class UserService{
+    constructor(username,password){
+        this.username = username;
+        this.password = password;
+    }
+       authentificate_user(cb){
+        
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', 'https://examples.com/api/user/authentificate?username=' +
+            this.username + '&password=' + this.password, true);
+            xhr.responseType = 'json';
+            xhr.send();
+            xhr.onload = () => {
+                if(xhr.status !== '200'){
+                    cb( xhr.statusText);
+                }else{
+                    cb(xhr.response);
+                }
+            };
+    }
+}
+
+$('form #login').click(function(){
+    let username = $('#username').value;
+    let password = $('#password').value;
+    const res = new UserService(username, password);
+    res.authentificate_user((res)=>{
+        if(res == true){
+            document.location.href = '/home';
+        }else {
+            alert(res);
+        }
+    })
+})
